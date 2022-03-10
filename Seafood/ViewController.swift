@@ -42,9 +42,45 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
         if let userPickedImage = info[UIImagePickerController.InfoKey.originalImage] as? UIImage {
         self.imageView.image = userPickedImage
             
-            imagePicker.dismiss(animated: true, completion: nil)
+            guard  let ciimage = CIImage(image: userPickedImage) else{
+                fatalError()
+            }
+            detect(image: ciimage)
+        }
+        
+        imagePicker.dismiss(animated: true, completion: nil)
+        
+    }
+    
+    
+    func detect(image: CIImage){
+        
+        guard let model = try? VNCoreMLModel(for: Inceptionv3().model) else{
+            fatalError()
+        }
+        
+        let request = VNCoreMLRequest(model: model) { request, error in
+            guard let results = request.results as? [VNClassificationObservation] else{
+                fatalError()
+            }
+            if let firstResult = results.first{
+                
+                self.navigationItem.title =  firstResult.identifier
+                
+               
+            }
+        }
+        
+        let handler = VNImageRequestHandler(ciImage: image)
+        
+        
+        do {
+        try handler.perform([request])
+        }catch {
+            print(error)
         }
     }
+    
     
     @IBAction func cameraTapped(_ sender: UIBarButtonItem) {
         
